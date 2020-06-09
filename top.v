@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // File name	:	top.v
 // Module Name	:	top
-// Function		:	Implements FSM to output arpeggio or just base note
+// Function		:	Implements FSM to Interpolate with BRAM
 // Coder		:	Caleb Bredekamp [BRDCAL003]
-// Comments		:
+// Comments		:	BRAM to be changed either to live input or SD functionality
 //------------------------------------------------------------------------------
 
 module top(
@@ -47,9 +47,6 @@ module top(
 	wire poly_dec;
 	Debounce inc_poly(CLK100MHZ, BTNR, inc_poly);
 	Debounce dec_poly(CLK100MHZ, BTNL, dec_poly);
-
-	wire resetButton;
-	Delay_Reset delayed_reset(CLK100MHZ, BTND, resetButton);
 //----------------------------Module Definitions--------------------------------
 
 	//	BRAM
@@ -110,10 +107,13 @@ module top(
 		);
 
 	//	SS Driver
+	wire resetButton;
+	Delay_Reset delayed_reset(CLK100MHZ, BTND, resetButton);
+	reg [4:0] digits [0:7];
 	SS_Driver SS_Driver1(
 		// SS Driver Inputs
 		.clk(CLK100MHZ),
-		.reset(ResetButton),
+		.reset(resetButton),
 		.digits(digits),
 
 		// SS Driver Outputs
@@ -133,7 +133,7 @@ module top(
 			else if (state_sel && mode==poly)
 				current_state	<=	 current_state + 1'b1;
 			else if (state_sel && mode!=poly)
-				current_state	<=	 current_state + 2'b2;
+				current_state	<=	 current_state + 2'b10;
 			if (mode >= 2'b11)
 				mode <= 0;
 		end
