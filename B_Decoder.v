@@ -32,10 +32,10 @@ module B_Decoder(
 			5'd22	: SevenSegment <= 7'b0111111;	// O
 			5'd23	: SevenSegment <= 7'b1011100;	// o
 			5'd24	: SevenSegment <= 7'b1110011;	// P
-			5'd24	: SevenSegment <= 7'b1010000;	// r
-			5'd24	: SevenSegment <= 7'b1101101;	// S
-			5'd24	: SevenSegment <= 7'b0111110;	// U
-			5'd24	: SevenSegment <= 7'b0011100;	// u
+			5'd25	: SevenSegment <= 7'b1010000;	// r
+			5'd26	: SevenSegment <= 7'b1101101;	// S
+			5'd27	: SevenSegment <= 7'b0111110;	// U
+			5'd28	: SevenSegment <= 7'b0011100;	// u
 			default: SevenSegment <= 7'b0000000;
 		endcase
 	end
