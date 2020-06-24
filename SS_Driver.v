@@ -1,21 +1,28 @@
 `timescale 1ns / 1ps
 module SS_Driver(
 	input 		clk, reset,
-	input 		[4:0] digits [0:6], // Binary-coded decimal input
+	input 		[4:0] digit0, // Binary-coded decimal input
+	input 		[4:0] digit1,
+	input 		[4:0] digit2,
+	input 		[4:0] digit3,
+	input 		[4:0] digit4,
+	input 		[4:0] digit5,
+	input 		[4:0] digit6,
+	input 		[4:0] digit7,
 	output reg	[7:0] SegmentDrivers = 8'hF7, // Digit drivers (active low)
 	output reg	[7:0] SevenSegment // Segments (active low)
 );
 
 // Make use of a subcircuit to decode the BCD to seven-segment (SS)
 	wire [6:0]SS[7:0];
-	B_Decoder B_Decoder0 (digits[0], SS[0]);
-	B_Decoder B_Decoder1 (digits[1], SS[1]);
-	B_Decoder B_Decoder2 (digits[2], SS[2]);
-	B_Decoder B_Decoder3 (digits[3], SS[3]);
-	B_Decoder B_Decoder4 (digits[4], SS[4]);
-	B_Decoder B_Decoder5 (digits[5], SS[5]);
-	B_Decoder B_Decoder6 (digits[6], SS[6]);
-	B_Decoder B_Decoder7 (digits[7], SS[7]);
+	B_Decoder B_Decoder0 (digit0, SS[0]);
+	B_Decoder B_Decoder1 (digit1, SS[1]);
+	B_Decoder B_Decoder2 (digit2, SS[2]);
+	B_Decoder B_Decoder3 (digit3, SS[3]);
+	B_Decoder B_Decoder4 (digit4, SS[4]);
+	B_Decoder B_Decoder5 (digit5, SS[5]);
+	B_Decoder B_Decoder6 (digit6, SS[6]);
+	B_Decoder B_Decoder7 (digit7, SS[7]);
 
 	// Counter to reduce the 100 MHz clock to 762.939 Hz (100 MHz / 2^17)
 	reg [16:0]Count =17'b0;

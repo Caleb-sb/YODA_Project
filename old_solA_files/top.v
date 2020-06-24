@@ -8,7 +8,8 @@
 
 module top(
 	input CLK100MHZ,
-	input BTNL, BTNR, BTNC, BTNU, BTND,
+	input BTNL, BTNR, BTNC,
+	input BTND,
 	output [1:0] LEDs,
 	output [7:0] SevenSegment,
 	output [7:0] SegmentDrivers
@@ -16,25 +17,34 @@ module top(
 
 //----------------------------State Definitions---------------------------------
 
-	parameter [1:0] x_select   =	2'b00;
-	parameter [1:0] busy       =	2'b01;
-	parameter [1:0] done       =	2'b10;
+	parameter [1:0] mode_select	=	2'b00;
+	parameter [1:0] poly_select	=	2'b01;
+	parameter [1:0] busy		=	2'b10;
+	parameter [1:0] done		=	2'b11;
 
 	reg [1:0] current_state =	0;
 
 //------------------------Substate Definitions----------------------------------
 
+	parameter [1:0] lin		=	2'b00;
+	parameter [1:0] poly	=	2'b01;
+	parameter [1:0] spline	=	2'b10;
+
+	reg [1:0] mode		=	0;
+	reg [3:0] poly_num	=	0;
 
 //------------------------Mode and Submode Select Inputs------------------------
+	wire state_inc;
+	wire state_dec;
+	wire state_sel;
+	Debounce inc_state(CLK100MHZ, BTNR, state_inc);
+	Debounce dec_state(CLK100MHZ, BTNL, state_dec);
+	Debounce sel_state(CLK100MHZ, BTNL, state_sel);
 
-	wire x_inc;
-	wire x_dec;
-	wire x_sel;
-	
-	Debounce inc_x(CLK100MHZ, BTNU, x_inc);
-	Debounce dec_x(CLK100MHZ, BTND, x_dec);
-	Debounce sel_x(CLK100MHZ, BTNC, x_sel);
-
+	wire poly_inc;
+	wire poly_dec;
+	Debounce inc_poly(CLK100MHZ, BTNR, poly_inc);
+	Debounce dec_poly(CLK100MHZ, BTNL, poly_dec);
 //----------------------------Module Definitions--------------------------------
 
 	//	BRAM
@@ -114,40 +124,35 @@ module top(
 		.SegmentDrivers(SegmentDrivers),
 		.SevenSegment(SevenSegment)
 		);
-	
-	//	X Selection
-	reg [13:0] x_search    = 0;
-	reg        active      = 0;
-	x_selector x_sel0(
-	    .clk(CLK100MHZ),
-	    .x_search(x_search),
-	    .active(active),
-	    .digit0(digits[0]),
-	    .digit1(digits[1]),
-	    .digit2(digits[2]),
-	    .digit3(digits[3])
-	);
+	//	SD Controller
 	//	Reset Delay
 
 //---------------------------Mode Select Logic----------------------------------
 
-    always @ (posedge CLK100MHZ) begin
-	   if (current_state == x_select) begin
-		    active <= 1;
-			if (x_inc)
-				x_search	<=	x_search + 1'b1;
-				if (x_search -1 == 9998)
-				    x_search <= 0;
-			else if (x_dec)
-				x_search 	<=	x_search - 1'b1;
-				if (x_search -1 == 14'b11111111111111)
-				    x_search <= 0;
-			else if (x_sel) 
+	always @ (posedge CLK100MHZ) begin
+		if (current_state == mode_select) begin
+			if (state_inc)
+				mode	<=	mode + 1'b1;
+			else if (state_dec)
+				mode 	<=	mode -1'b1;
+			else if (state_sel && mode==poly)
 				current_state	<=	 current_state + 1'b1;
+			else if (state_sel && mode!=poly)
+				current_state	<=	 current_state + 2'b10;
+			if (mode >= 2'b11)
+				mode <= 0;
+		end
+
+		else if (current_state == poly_select) begin
+			if (poly_inc)
+				poly_num <= poly+1'b1;
+			else if (poly_dec)
+				poly_num <= poly-1'b1;
+			else if (state_sel)
+				current_state <= current_state + 1'b1;
 		end
 
 		else if (current_state == busy) begin
-		    active <=0;
 			// TODO insert code for inputting and outputting values from
 			// functional modules and place in output BRAM
 			if (done)
@@ -155,7 +160,6 @@ module top(
 		end
 
 		else if (current_state == done)
-		  active <=0;
 		  current_state <= current_state;
 			// Wait here to receive further instructions
 		
