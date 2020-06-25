@@ -25,7 +25,7 @@ input clk,
 input[9:0] x,
 input[9:0] x0, input[9:0] y0,
 input[9:0] x1, input[9:0] y1,
-output reg[9:0] y
+  output reg[9:0] y
     );
     
 reg[9:0] m;
@@ -33,10 +33,10 @@ reg[9:0] m_den;
     
 always @(posedge clk)
 begin
-    m<=y1-y0;
-    m_den<=x1-x0;
-    m<=m/m_den;
-    m<=m*(x-x0);
-    y<=m+y0;
+    m=y1-y0;
+    m_den=x1-x0;
+    m=m/m_den;
+    m=m*(x-x0);
+    y=m+y0;
 end
 endmodule
