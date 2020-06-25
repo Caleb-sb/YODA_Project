@@ -120,7 +120,15 @@ module top(
 	reg [13:0] x_search    = 0;
 	reg [13:0] x_local     = 0;
 	//	Reset Delay
+    
+    // Result
+    reg [13:0] y = 0;
+    wire [3:0] thousands, hundreds, tens, ones;
 
+    assign thousands    =   y/1000;
+    assign hundreds     =   (y-thousands)/100;
+    assign tens         =   (y-thousands-hundreds)/10;
+    assign ones         =   y-thousands-hundreds-tens;
 //---------------------------Mode Select Logic----------------------------------
 
     always @ (posedge CLK100MHZ) begin
@@ -167,9 +175,11 @@ module top(
 				current_state <= current_state + 1'b1;
 		end
 
-		else if (current_state == done)
-		  current_state <= current_state;
-			// Wait here to receive further instructions
-		
+		else if (current_state == done) begin
+		  digits[0] <= ones;
+		  digits[1] <= tens;
+		  digits[2] <= hundreds;
+		  digits[3] <= thousands;
+		end
 	end
 endmodule
