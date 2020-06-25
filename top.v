@@ -31,7 +31,7 @@ module top(
 	wire x_inc;
 	wire x_dec;
 	wire x_sel;
-	
+
 	Debounce inc_x(CLK100MHZ, BTNU, x_inc);
 	Debounce dec_x(CLK100MHZ, BTND, x_dec);
 	Debounce sel_x(CLK100MHZ, BTNC, x_sel);
@@ -39,61 +39,61 @@ module top(
 //----------------------------Module Definitions--------------------------------
 
 	//	BRAM
-//	reg in_ena			=	1;
-//	reg in_wea			=	0;
-//	reg [9:0]	in_addra	=	0;
-//	reg	[15:0]	in_dina	=	0;
-//	wire[15:0]	in_douta;
+	reg in_ena				=	1;
+	reg in_wea				=	0;
+	reg [9:0]	in_addra	=	0;
+	reg	[15:0]	in_dina		=	0;
+	wire[15:0]	in_douta;
 
-//	reg in_enb			=	1;
-//	reg in_web			=	0;
-//	reg [9:0]	in_addrb	=	0;
-//	reg	[15:0]	in_dinb	=	0;
-//	wire[15:0]	in_doutb;
+	reg in_enb				=	1;
+	reg in_web				=	0;
+	reg [9:0]	in_addrb	=	0;
+	reg	[15:0]	in_dinb		=	0;
+	wire[15:0]	in_doutb;
 
-//	input_mem_blk in_points(
-//		.clka(CLK100MHZ),
-//		.ena(in_ena),
-//		.wea(in_wea),
-//		.addra(in_addra),
-//		.dina(in_dina),
-//		.douta(in_douta),
+	input_mem_blk in_points(
+		.clka(CLK100MHZ),
+		.ena(in_ena),
+		.wea(in_wea),
+		.addra(in_addra),
+		.dina(in_dina),
+		.douta(in_douta),
 
-//		.clkb(CLK100MHZ),
-//		.enb(in_enb),
-//		.web(in_web),
-//		.addrb(in_addrb),
-//		.dinb(in_dinb),
-//		.doutb(in_doutb)
-//		);
+		.clkb(CLK100MHZ),
+		.enb(in_enb),
+		.web(in_web),
+		.addrb(in_addrb),
+		.dinb(in_dinb),
+		.doutb(in_doutb)
+		);
 
-//	reg out_ena			=	1;
-//	reg out_wea			=	0;
-//	reg [9:0]	out_addra	=	0;
-//	reg	[15:0]	out_dina	=	0;
-//	wire[15:0]	out_douta;
+	reg out_ena				=	1;
+	reg out_wea				=	0;
+	reg [9:0]	out_addra	=	0;
+	reg	[15:0]	out_dina	=	0;
+	wire[15:0]	out_douta;
 
-//	reg out_enb			=	1;
-//	reg out_web			=	0;
-//	reg [9:0]	out_addrb	=	0;
-//	reg	[15:0]	out_dinb	=	0;
-//	wire[15:0]	out_doutb;
+	reg out_enb				=	1;
+	reg out_web				=	0;
+	reg [9:0]	out_addrb	=	0;
+	reg	[15:0]	out_dinb	=	0;
+	wire[15:0]	out_doutb;
 
-//	output_mem_blk out_points(
-//		.clka(CLK100MHZ),
-//		.ena(out_ena),
-//		.wea(out_wea),
-//		.addra(out_addra),
-//		.dina(out_dina),
-//		.douta(out_douta),
+	output_mem_blk out_points(
+		.clka(CLK100MHZ),
+		.ena(out_ena),
+		.wea(out_wea),
+		.addra(out_addra),
+		.dina(out_dina),
+		.douta(out_douta),
 
-//		.clkb(CLK100MHZ),
-//		.enb(out_enb),
-//		.web(out_web),
-//		.addrb(out_addrb),
-//		.dinb(out_dinb),
-//		.doutb(out_doutb)
-//		);
+		.clkb(CLK100MHZ),
+		.enb(out_enb),
+		.web(out_web),
+		.addrb(out_addrb),
+		.dinb(out_dinb),
+		.doutb(out_doutb)
+		);
 
 	//	SS Driver
 	wire resetButton;
@@ -115,12 +115,12 @@ module top(
 		.SegmentDrivers(SegmentDrivers),
 		.SevenSegment(SevenSegment)
 		);
-	
+
 	//	X Selection
 	reg [13:0] x_search    = 0;
 	reg [13:0] x_local     = 0;
 	//	Reset Delay
-    
+
     // Result
     reg [13:0] y = 0;
     wire [3:0] thousands, hundreds, tens, ones;
@@ -163,14 +163,64 @@ module top(
 				    end
 				end
 			end
-			else if (x_sel) 
+			else if (x_sel)
 				current_state	<=	 current_state + 1'b1;
-				
+
 		end
 
 		else if (current_state == busy) begin
 			// TODO insert code for inputting and outputting values from
 			// functional modules and place in output BRAM
+
+			// I know this isnt the correct place for these variables I am just so lost and dont really know which variables to use so
+			// I am just using these for now and will change them when I understand better.
+			reg [13:0] x_find = 10;	 // variable we are trying to find (10 is just an example)
+			reg [13:0] index = 0;	
+			reg [13:0] max = 14'b11111111111111; 	// max value for 14-bit register
+
+			// this code assumes that BRAM inA & inB hold the input X and Y lists repsectively and then outA & outB hold the values (X and Y respectively) around x_find
+
+			while(in_douta < x_find)
+			begin
+				index <= index + 1;	// by the end of this, index will be at the position of the value greater than x_find
+			end
+			if (index == max) // if x_find is out of range of list then return extremes in list
+			begin
+
+				in_addra <= 0;
+				out_dina <= in_douta;
+
+				out_addra <= 1;
+				in_addra <= max
+				out_dina <= in_douta;
+
+				out_addrb <= 0;
+				in_addrb <= 0;
+				out_dinb <= in_doutb;
+
+				out_addrb <= 1;
+				in_addrb <= max
+				out_dinb <= in_doutb;
+			else begin		// else send the values around that point
+				// first insert two x values, one before index and one after index
+
+				out_addra <= 0;
+				out_dina <= in_douta;
+
+				in_addra <= in_addra +1;
+				out_addra <= 1;
+				out_dina <= in_douta;
+
+				// then enter two corresponding y-values, one before index and one after index
+
+				out_addrb <= 0;
+				out_dinb <= in_doutb;
+
+				in_addrb <= in_addrb +1;
+				out_addrb <= 1;
+				out_dinb <= in_doutb;
+			end
+
 			if (done)
 				current_state <= current_state + 1'b1;
 		end
