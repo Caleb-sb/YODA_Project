@@ -39,73 +39,34 @@ module top(
 //----------------------------Module Definitions--------------------------------
 
 	//	BRAM
-	reg in_ena				=	1;
-	reg in_wea				=	0;
-	reg [9:0]	in_addra	=	0;
-	reg	[15:0]	in_dina		=	0;
-	wire[15:0]	in_douta;
+	reg ena				=	1;
+	reg wea				=	0;
+	reg [13:0]	addra	=	0;
+	reg	[13:0]	dina		=	0;
+	wire[13:0]	douta;
 
-	reg in_enb				=	1;
-	reg in_web				=	0;
-	reg [9:0]	in_addrb	=	0;
-	reg	[15:0]	in_dinb		=	0;
-	wire[15:0]	in_doutb;
+	reg enb				=	1;
+	reg web				=	0;
+	wire [13:0]	addrb;
+	assign addrb = addra+1;
+	reg	[13:0]	dinb		=	0;
+	wire[13:0]	doutb;
 
 	input_mem_blk in_points(
 		.clka(CLK100MHZ),
-		.ena(in_ena),
-		.wea(in_wea),
-		.addra(in_addra),
-		.dina(in_dina),
-		.douta(in_douta),
+		.ena(ena),
+		.wea(wea),
+		.addra(addra),
+		.dina(dina),
+		.douta(douta),
 
 		.clkb(CLK100MHZ),
-		.enb(in_enb),
-		.web(in_web),
-		.addrb(in_addrb),
-		.dinb(in_dinb),
-		.doutb(in_doutb)
+		.enb(enb),
+		.web(web),
+		.addrb(addrb),
+		.dinb(dinb),
+		.doutb(doutb)
 		);
-
-	reg out_ena				=	1;
-	reg out_wea				=	0;
-	reg [9:0]	out_addra	=	0;
-	reg	[15:0]	out_dina	=	0;
-	wire[15:0]	out_douta;
-
-	reg out_enb				=	1;
-	reg out_web				=	0;
-	reg [9:0]	out_addrb	=	0;
-	reg	[15:0]	out_dinb	=	0;
-	wire[15:0]	out_doutb;
-
-	output_mem_blk out_points(
-		.clka(CLK100MHZ),
-		.ena(out_ena),
-		.wea(out_wea),
-		.addra(out_addra),
-		.dina(out_dina),
-		.douta(out_douta),
-
-		.clkb(CLK100MHZ),
-		.enb(out_enb),
-		.web(out_web),
-		.addrb(out_addrb),
-		.dinb(out_dinb),
-		.doutb(out_doutb)
-		);
-
-	// Instantiating Lin Interpolate module
-	linearinterpolate lin(.clk(clk),
-                        .x(x_find),
-                        .x0(given_x0),
-                        .y0(given_y0),
-                        .x1(given_x1),
-                        .y1(given_y1),
-                        .y(result_y)
-                       );
-
-	reg clk = 0; // clk used for lin module
 
 	//	SS Driver
 	wire resetButton;
@@ -127,6 +88,11 @@ module top(
 		.SegmentDrivers(SegmentDrivers),
 		.SevenSegment(SevenSegment)
 		);
+    // Display
+    reg [4:0] disp_delay = 0;
+    reg [13:0] temp0 = 0;
+    reg [13:0] temp1 = 0;
+    reg [13:0] temp2 = 0;
 
 	//	X Selection
 	reg [13:0] x_search    = 0;
@@ -134,19 +100,36 @@ module top(
 	//	Reset Delay
 
     // Result
-    reg [13:0] y = 0;
-    wire [3:0] thousands, hundreds, tens, ones;
+    reg [13:0] found_result = 0;
+    reg found_flag = 0;
+    reg calc_flag = 0;
+    wire [13:0] y;
 
-    assign thousands    =   y/1000;
-    assign hundreds     =   (y-thousands)/100;
-    assign tens         =   (y-thousands-hundreds)/10;
-    assign ones         =   y-thousands-hundreds-tens;
+    //Linear Interpolation
+    reg start       = 0;
+    wire complete;
+    reg cant_find   = 0;
+    reg [1:0] ram_counter = 2'b00;
+    reg [9:0] x0, y0, y1, x1 = 0;
+    reg [1:0] lin_count = 0; //For determining which vars have already been passed to linear module
+
+    linearinterpolate lin(
+        .clk(CLK100MHZ),
+        .x(x_search),
+        .start(start),
+        .x0(x0),
+        .x1(x1),
+        .y0(y0),
+        .y1(y1),
+        .done(complete),
+        .y(y)
+        );
 //---------------------------Mode Select Logic----------------------------------
 
     always @ (posedge CLK100MHZ) begin
-	   if (current_state == x_select) begin
-			if (x_inc) begin
-				x_search	<=	x_search + 1'b1;
+	    if (current_state == x_select) begin
+		    if (x_inc) begin
+			    x_search	<=	x_search + 1'b1;
 				if (x_search -1 == 9998)
 				    x_search <= 0;
 				digits[0] <= digits[0] == 9 ? 0 : digits[0]+1'b1;
@@ -177,58 +160,86 @@ module top(
 			end
 			else if (x_sel)
 				current_state	<=	 current_state + 1'b1;
-
 		end
 
 		else if (current_state == busy) begin
-			// TODO insert code for inputting and outputting values from
-			// functional modules and place in output BRAM
+		    digits[0]<=0;
+		    digits[1]<=0;
+		    digits[2]<=0;
+		    digits[3]<=0;
+		    ram_counter <= ram_counter+1'b1;
 
-			// I know this isnt the correct place for these variables I am just so lost and dont really know which variables to use so
-			// I am just using these for now and will change them when I understand better.
-	
-			reg [13:0] max = 14'b11111111111111; 	// must set this to the number of values stored in the BRAM
-			clk = ~clk; // clk used for lin module
-			// this code assumes that BRAM inA & inB hold the input X and Y lists repsectively 
-
-			if(in_douta < x_find)
-			begin
-				in_addra <= in_addra + 1;	// increment BRAM to view next value
-			else if (in_addra == max) // if x_find is out of range of list then return extremes in list
-			begin
-
-				x2 <= in_douta;				// put last value into x2
-				in_addra <= in_addra + 1;	// increment BRAM to view next value
-				x1 <= in_douta;				// put first value into x1
-				
-				y2 <= in_doutb;				// put last value into y2
-				in_addrb <= in_addrb + 1;	// increment BRAM to view next value
-				y1 <= in_doutb;				// put first value into y1
-				
-
-			else begin		// else send the values around that point
-				// first insert two x values, one before index and one after index
-				
-				in_addra <= in_addra - 1;	// decrement BRAM to view previous value
-				x1 <= in_douta;				// put previous value into x1
-				in_addra <= in_addra + 1;	// increment BRAM to view next value
-				x2 <= in_douta;				// put next value into x2
-				
-				in_addrb <= in_addrb - 1;	// decrement BRAM to view previous value
-				y1 <= in_doutb;				// put previous value into y1
-				in_addrb <= in_addrb + 1;	// increment BRAM to view next value
-				y2 <= in_doutb;				// put next value into y2
+			if (ram_counter ==0 && douta < x_search)
+			    addra <= addra+2;
+			else if (ram_counter == 0 && douta == x_search) begin
+			    found_result <= doutb;
+			    current_state <= current_state + 1'b1;
+			    found_flag <=1;
 			end
+			else if (ram_counter == 0 && douta > x_search && !complete || cant_find && !complete) begin
+			    if(lin_count == 0) begin
+			        cant_find <= 1;
+			        x1 <= douta;
+			        y1 <= doutb;
+			        addra <= addra-2;
+			        lin_count <= lin_count+1;
+			    end
+			    else if(lin_count ==1) begin
+			        x0 <= douta;
+			        y0 <= doutb;
+			        start <= 1;
+			        calc_flag = 1;
+			    end
+			end
+			else if(complete)
+			    current_state <= current_state+1'b1;
 
-			if (done)
-				current_state <= current_state + 1'b1;
+
 		end
 
 		else if (current_state == done) begin
-		  digits[0] <= ones;
-		  digits[1] <= tens;
-		  digits[2] <= hundreds;
-		  digits[3] <= thousands;
+		    disp_delay <= disp_delay+1'b1; //Allow for timing constraints in path to be met, at least 18ns each
+
+		    if (found_flag) begin
+		        if(disp_delay==0)begin
+		          temp0 <= (found_result/1000)*1000;
+		          temp1 <= (found_result/100)*100;
+		          temp2 <= (found_result/10)*10;
+		        end
+		        if (disp_delay == 2)
+		          digits[0] <= found_result - temp0 - temp1-temp2;
+		        else if (disp_delay == 4)
+		          digits[1] <= (temp2-temp1)/10;
+		        else if (disp_delay == 6)
+		          digits[2] <= (temp1-temp0)/100;
+		        else if (disp_delay == 8) begin
+		          digits[3] <= temp0/1000;
+		          disp_delay <= 0;
+		        end
+
+		    end
+		    else if(calc_flag) begin
+		        if(disp_delay==0)begin
+		          temp0 <= (y/1000)*1000;
+		          temp1 <= (y/100)*100;
+		          temp2 <= (y/10)*10;
+		        end
+		        if (disp_delay == 2)
+		          digits[0] <= y - temp0 - temp1-temp2;
+		        else if (disp_delay == 4)
+		          digits[1] <= (temp2-temp1)/10;
+		        else if (disp_delay == 6)
+		          digits[2] <= (temp1-temp0)/100;
+		        else if (disp_delay == 8) begin
+		          digits[3] <= temp0/1000;
+		          disp_delay<= 0;
+		        end
+		    end
+
+
+		    addra  <= 0;
+		    ram_counter <= 0;
+		    cant_find <= 0;
 		end
 	end
 endmodule
