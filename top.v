@@ -95,6 +95,18 @@ module top(
 		.doutb(out_doutb)
 		);
 
+	// Instantiating Lin Interpolate module
+	linearinterpolate lin(.clk(clk),
+                        .x(x_find),
+                        .x0(given_x0),
+                        .y0(given_y0),
+                        .x1(given_x1),
+                        .y1(given_y1),
+                        .y(result_y)
+                       );
+
+	reg clk = 0; // clk used for lin module
+
 	//	SS Driver
 	wire resetButton;
 //	Delay_Reset delayed_reset(CLK100MHZ, BTND, resetButton);
@@ -174,51 +186,38 @@ module top(
 
 			// I know this isnt the correct place for these variables I am just so lost and dont really know which variables to use so
 			// I am just using these for now and will change them when I understand better.
-			reg [13:0] x_find = 10;	 // variable we are trying to find (10 is just an example)
-			reg [13:0] index = 0;	
-			reg [13:0] max = 14'b11111111111111; 	// max value for 14-bit register
+	
+			reg [13:0] max = 14'b11111111111111; 	// must set this to the number of values stored in the BRAM
+			clk = ~clk; // clk used for lin module
+			// this code assumes that BRAM inA & inB hold the input X and Y lists repsectively 
 
-			// this code assumes that BRAM inA & inB hold the input X and Y lists repsectively and then outA & outB hold the values (X and Y respectively) around x_find
-
-			while(in_douta < x_find)
+			if(in_douta < x_find)
 			begin
-				index <= index + 1;	// by the end of this, index will be at the position of the value greater than x_find
-			end
-			if (index == max) // if x_find is out of range of list then return extremes in list
+				in_addra <= in_addra + 1;	// increment BRAM to view next value
+			else if (in_addra == max) // if x_find is out of range of list then return extremes in list
 			begin
 
-				in_addra <= 0;
-				out_dina <= in_douta;
+				x2 <= in_douta;				// put last value into x2
+				in_addra <= in_addra + 1;	// increment BRAM to view next value
+				x1 <= in_douta;				// put first value into x1
+				
+				y2 <= in_doutb;				// put last value into y2
+				in_addrb <= in_addrb + 1;	// increment BRAM to view next value
+				y1 <= in_doutb;				// put first value into y1
+				
 
-				out_addra <= 1;
-				in_addra <= max
-				out_dina <= in_douta;
-
-				out_addrb <= 0;
-				in_addrb <= 0;
-				out_dinb <= in_doutb;
-
-				out_addrb <= 1;
-				in_addrb <= max
-				out_dinb <= in_doutb;
 			else begin		// else send the values around that point
 				// first insert two x values, one before index and one after index
-
-				out_addra <= 0;
-				out_dina <= in_douta;
-
-				in_addra <= in_addra +1;
-				out_addra <= 1;
-				out_dina <= in_douta;
-
-				// then enter two corresponding y-values, one before index and one after index
-
-				out_addrb <= 0;
-				out_dinb <= in_doutb;
-
-				in_addrb <= in_addrb +1;
-				out_addrb <= 1;
-				out_dinb <= in_doutb;
+				
+				in_addra <= in_addra - 1;	// decrement BRAM to view previous value
+				x1 <= in_douta;				// put previous value into x1
+				in_addra <= in_addra + 1;	// increment BRAM to view next value
+				x2 <= in_douta;				// put next value into x2
+				
+				in_addrb <= in_addrb - 1;	// decrement BRAM to view previous value
+				y1 <= in_doutb;				// put previous value into y1
+				in_addrb <= in_addrb + 1;	// increment BRAM to view next value
+				y2 <= in_doutb;				// put next value into y2
 			end
 
 			if (done)
