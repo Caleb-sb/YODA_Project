@@ -3,14 +3,14 @@
 // File name	:	top.v
 // Module Name	:	top
 // Function		:	Implements FSM to Interpolate with BRAM
-// Coder		:	Caleb Bredekamp [BRDCAL003]
-// Comments		:	BRAM to be changed either to live input or SD functionality
+// Coder		:	Caleb Bredekamp [BRDCAL003], Michael Du Preez [DPRMIC007]
+// Comments		:	Solution B Version: Assumes bram is in x,y,x,y,x,y pattern
 //------------------------------------------------------------------------------
 
 module top(
 	input CLK100MHZ,
-	input BTNL, BTNR, BTNC, BTNU, BTND,
-	output [1:0] LED,
+	input BTNL, BTNC, BTNU, BTND,
+//	output [1:0] LED,
 	output [7:0] SevenSegment,
 	output [7:0] SegmentDrivers
 	);
@@ -22,8 +22,6 @@ module top(
 	parameter [1:0] done       =	2'b10;
 
 	reg [1:0] current_state =	0;
-
-//------------------------Substate Definitions----------------------------------
 
 
 //------------------------Mode and Submode Select Inputs------------------------
@@ -70,7 +68,7 @@ module top(
 
 	//	SS Driver
 	wire resetButton;
-//	Delay_Reset delayed_reset(CLK100MHZ, BTND, resetButton);
+	Debounce delayed_reset(CLK100MHZ, BTNL, resetButton);
 	reg [4:0] digits [0:7];
 	SS_Driver SS_Driver1(
 		// SS Driver Inputs
@@ -127,7 +125,31 @@ module top(
 //---------------------------Mode Select Logic----------------------------------
 
     always @ (posedge CLK100MHZ) begin
-	    if (current_state == x_select) begin
+        if (resetButton) begin
+            current_state <= x_select;
+            x_search <= 0;
+            digits[0] <= 0;
+            digits[1] <= 0;
+            digits[2] <= 0;
+            digits[3] <= 0;
+            digits[4] <= 0;
+            digits[5] <= 0;
+            digits[6] <= 0;
+            digits[7] <= 0;
+            start <=0;
+            addra <= 0;
+            ram_counter <= 0;
+            disp_delay <= 0;
+            calc_flag <= 0;
+            found_flag <= 0;
+            lin_count<=0;
+            cant_find <=0;
+            temp0<=0;
+            temp1<=0;
+            temp2<=0;
+
+        end
+	    else if (current_state == x_select) begin
 		    if (x_inc) begin
 			    x_search	<=	x_search + 1'b1;
 				if (x_search -1 == 9998)

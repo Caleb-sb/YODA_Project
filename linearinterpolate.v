@@ -1,23 +1,10 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company:
-// Engineer:
-//
-// Create Date: 09.06.2020 18:12:18
-// Design Name:
-// Module Name: linearinterpolate
-// Project Name:
-// Target Devices:
-// Tool Versions:
-// Description:
-//
-// Dependencies:
-//
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-//
-//////////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
+// File name	:	linearinterpolate.v
+// Module Name	:	linearinterpolate
+// Function		:	Performs linear interpolation
+// Coder		:	Taboka Nyadza NYDTAB001
+//------------------------------------------------------------------------------
 
 
 module linearinterpolate(

@@ -1,4 +1,11 @@
 `timescale 1ns / 1ps
+//------------------------------------------------------------------------------
+// File name	:	B_Decoder.v
+// Module Name	:	B_Decoder
+// Function		:	Translates letters (solA) and numbers(solB)
+// Coder		:	Caleb Bredekamp [BRDCAL003]
+// Comments		:	Adapted from EEE4120F Repo: https://github.com/UCT-EE-OCW/EEE4120F-Pracs.git
+//------------------------------------------------------------------------------
 module B_Decoder(
 	input [4:0]digit,
 	output reg [6:0]SevenSegment

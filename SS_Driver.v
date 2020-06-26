@@ -1,4 +1,11 @@
 `timescale 1ns / 1ps
+//------------------------------------------------------------------------------
+// File name	:	SS_Driver.v
+// Module Name	:	SS_Driver
+// Function		:	Logic for SevenSegmentDisplay
+// Coder		:	Caleb Bredekamp [BRDCAL003]
+// Comments		:	Adapted from EEE4120F Repo: https://github.com/UCT-EE-OCW/EEE4120F-Pracs.git
+//------------------------------------------------------------------------------
 module SS_Driver(
 	input 		clk, reset,
 	input 		[4:0] digit0, // Binary-coded decimal input
